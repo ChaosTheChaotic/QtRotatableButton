@@ -4,15 +4,12 @@
 #include <QtMath>
 #include <QStylePainter>
 #include <QStyleOptionButton>
-#include <QDebug>
 
 RotatableButton::RotatableButton(QWidget *parent)
     : QPushButton(parent)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    m_baseSize = QPushButton::sizeHint();
-    updateButtonGeometry();
 }
 
 RotatableButton::RotatableButton(const QString &text, QWidget *parent)
@@ -20,8 +17,6 @@ RotatableButton::RotatableButton(const QString &text, QWidget *parent)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    m_baseSize = QPushButton::sizeHint();
-    updateButtonGeometry();
 }
 
 void RotatableButton::setRotation(qreal rotation)
@@ -30,14 +25,25 @@ void RotatableButton::setRotation(qreal rotation)
     update();
 }
 
-void RotatableButton::updateButtonGeometry()
+void RotatableButton::setButtonSize(const QSize &size)
 {
-    // Calculate diagonal length as the maximum possible size needed
-    int diagonal = qCeil(qSqrt(m_baseSize.width() * m_baseSize.width() + 
-                              m_baseSize.height() * m_baseSize.height()));
+    m_buttonSize = size;
+    updateContainerSize();
+}
+
+void RotatableButton::updateContainerSize()
+{
+    // Calculate the diagonal to ensure the button fits at any rotation
+    int diagonal = qCeil(qSqrt(m_buttonSize.width() * m_buttonSize.width() + 
+                              m_buttonSize.height() * m_buttonSize.height()));
     
-    // Set size to a square that can contain the button at any rotation
-    setFixedSize(diagonal, diagonal);
+    // Set the widget size to this diagonal size
+    QPushButton::setFixedSize(diagonal, diagonal);
+}
+
+void RotatableButton::resizeEvent(QResizeEvent *event)
+{
+    QPushButton::resizeEvent(event);
 }
 
 void RotatableButton::paintEvent(QPaintEvent *event)
@@ -52,30 +58,21 @@ void RotatableButton::paintEvent(QPaintEvent *event)
 
     QPointF center = rect().center();
 
-    // Move to center, rotate, then move back
+    // Setup rotation around center
     painter.translate(center);
     painter.rotate(m_rotation);
     painter.translate(-center);
 
-    // Calculate the position to center the base button in the widget
-    int x = (width() - m_baseSize.width()) / 2;
-    int y = (height() - m_baseSize.height()) / 2;
+    // Calculate position to center the button in the container
+    int x = (width() - m_buttonSize.width()) / 2;
+    int y = (height() - m_buttonSize.height()) / 2;
 
+    // Create and configure style option
     QStyleOptionButton option;
     initStyleOption(&option);
-    option.rect = QRect(x, y, m_baseSize.width(), m_baseSize.height());
+    option.rect = QRect(x, y, m_buttonSize.width(), m_buttonSize.height());
 
     style()->drawControl(QStyle::CE_PushButton, &option, &painter, this);
 
     painter.restore();
-}
-
-QSize RotatableButton::sizeHint() const
-{
-    return size();
-}
-
-QSize RotatableButton::minimumSizeHint() const
-{
-    return size();
 }
