@@ -14,17 +14,16 @@ public:
     explicit RotatableButton(const QString &text, QWidget *parent = nullptr);
     qreal rotation() const { return m_rotation; }
     void setRotation(qreal rotation);
-    QSize baseSize() const { return m_baseSize; }
+    void setButtonSize(const QSize &size);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
-    QSize sizeHint() const override;
-    QSize minimumSizeHint() const override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
-    void updateButtonGeometry();
+    void updateContainerSize();
     qreal m_rotation = 0;
-    QSize m_baseSize;
+    QSize m_buttonSize;  // Actual visual button size
 };
 
 #endif // ROTATABLEBUTTON_H
